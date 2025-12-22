@@ -1,6 +1,6 @@
 import api from "./api";
 
-const Courses = {
+const CoursesService = {
   async getcourses({
     search = "",
     status = "",
@@ -25,19 +25,22 @@ const Courses = {
   },
 
   async deleteCourse(id) {
-    // backend expects /api/course/delete-course
     const { data } = await api.delete("/api/course/delete-course", {
-      data: { id },
+      data: { course_id: id },
     });
     return data;
   },
 
   async editCourse(id, payload) {
-    // backend expects /api/course/edit-course
-    const { data } = await api.put("/api/course/edit-course", {
-      id,
-      ...payload,
-    });
+    const courseData = {
+      course_id: id, 
+      price: payload.price,
+      duration: payload.duration,
+      name: payload.name,
+      description: payload.description,
+    };
+
+    const { data } = await api.post("/api/course/edit-course", courseData);
     return data;
   },
 
@@ -52,14 +55,18 @@ const Courses = {
   },
 
   async freezeCourse(id) {
-    const { data } = await api.post("/api/course/freeze-course", { id });
+    const { data } = await api.post("/api/course/freeze-course", { 
+      course_id: id 
+    });
     return data;
   },
 
   async unfreezeCourse(id) {
-    const { data } = await api.post("/api/course/unfreeze-course", { id });
+    const { data } = await api.post("/api/course/unfreeze-course", { 
+      course_id: id 
+    });
     return data;
   },
 };
 
-export default Courses;
+export default CoursesService;
