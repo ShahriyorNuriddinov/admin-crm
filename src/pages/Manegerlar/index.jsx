@@ -181,7 +181,7 @@ const Manegerlar = () => {
 
   return (
     <div className="p-4">
-      <h1 className="text-xl font-bold mb-4">O‘qituvchilar ro‘yxati</h1>
+      <h1 className="text-xl font-bold mb-4">Manegerlar ro‘yxati</h1>
 
       <div className="mb-4 flex items-center gap-3">
         <div className="ml-auto flex items-center gap-2">
@@ -208,7 +208,7 @@ const Manegerlar = () => {
           >
             <option value="">All</option>
             <option value="faol">Faol</option>
-            <option value="nofaol">Nofaol</option>
+            <option value="Nofaol">Nofaol</option>
           </select>
         </div>
       </div>

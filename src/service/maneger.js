@@ -35,7 +35,7 @@ const Manager = {
   },
 
   async editManager(id, payload) {
-    const { data } = await api.put("/api/staff/edited-manager", {
+    const { data } = await api.post("/api/staff/edited-manager", {
       id,
       ...payload,
     });

@@ -2,12 +2,7 @@ import axios from "./api";
 
 const AuthService = {
   async userLogin({ email, password }) {
-    const response = await axios.post("/api/auth/sign-in", {
-      email,
-      password,
-    });
-    console.log(response.data.data);
-
+    const response = await axios.post("/api/auth/sign-in", { email, password });
     return response.data.data;
   },
 
@@ -17,7 +12,7 @@ const AuthService = {
   },
 
   async editProfile(payload) {
-    const { data } = await axios.put("/api/auth/edit-profile", payload);
+    const { data } = await axios.post("/api/auth/edit-profile", payload);
     return data;
   },
 

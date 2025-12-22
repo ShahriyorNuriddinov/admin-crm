@@ -1,7 +1,15 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
-
+import { NavLink, useNavigate } from "react-router-dom";
+import { Logout } from "../slice/auth";
+import { useDispatch } from "react-redux";
+import LogoutButton from "./Loguoutbutton";
 const Main = () => {
+   const dispatch = useDispatch();
+  const navigate = useNavigate();
+    const logoutHandler = () => {
+    dispatch(Logout()); 
+    navigate("/login", { replace: true }); 
+  };
   const nav = [
     {
       text: "Asosiy",
@@ -192,29 +200,6 @@ const Main = () => {
       ),
       url: "/profile",
     },
-    {
-      text: "Chiqish",
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          class="lucide lucide-log-out"
-          aria-hidden="true"
-        >
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-          <polyline points="16 17 21 12 16 7"></polyline>
-          <line x1="21" x2="9" y1="12" y2="12"></line>
-        </svg>
-      ),
-      url: "/chiqish",
-    },
   ];
   return (
     <main>
@@ -254,6 +239,9 @@ const Main = () => {
               </NavLink>
             );
           })}
+           <li>
+          <LogoutButton />
+        </li>
         </ul>
       </div>
     </main>
