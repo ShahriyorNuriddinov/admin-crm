@@ -41,16 +41,6 @@ const Manager = {
     });
     return data;
   },
-
-  async leaveStaff(id) {
-    const { data } = await api.post("/api/staff/leave-staff", { id });
-    return data;
-  },
-
-  async leaveExitStaff(id) {
-    const { data } = await api.post("/api/staff/leave-exit-staff", { id });
-    return data;
-  },
 };
 
 export default Manager;

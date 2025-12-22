@@ -22,6 +22,7 @@ const Manegerlar = () => {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [errorMessage, setErrorMessage] = useState(""); 
 
   const loading = useSelector((state) => state.loading);
   const dispatch = useDispatch();
@@ -42,7 +43,7 @@ const Manegerlar = () => {
         setTeachers(res.data || []);
       } catch (err) {
         console.error("ERR:", err.response?.status);
-        toast.error("O‘qituvchilarni olishda xatolik");
+        toast.error("O'qituvchilarni olishda xatolik");
       } finally {
         dispatch(setLoading(false));
       }
@@ -57,7 +58,7 @@ const Manegerlar = () => {
       setTeachers(res.data || []);
     } catch (err) {
       console.error("ERR:", err.response?.status);
-      toast.error("O‘qituvchilarni olishda xatolik");
+      toast.error("O'qituvchilarni olishda xatolik");
     } finally {
       dispatch(setLoading(false));
     }
@@ -67,6 +68,7 @@ const Manegerlar = () => {
     setSelectedTeacher(teacher);
     setFormData({ ...teacher });
     setModalOpen(true);
+    setErrorMessage("");
   };
 
   const openCreateModal = () => {
@@ -79,6 +81,7 @@ const Manegerlar = () => {
       active: true,
     });
     setModalOpen(true);
+    setErrorMessage(""); 
   };
 
   const handleFormChange = (e) => {
@@ -87,6 +90,7 @@ const Manegerlar = () => {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+    setErrorMessage(""); 
   };
 
   const handleSaveEdit = async () => {
@@ -98,41 +102,31 @@ const Manegerlar = () => {
           ...formData,
         });
         await Manager.editManager(id, formData);
-        toast.success("Muvaffaqiyatli o‘zgartirildi");
+        toast.success("Muvaffaqiyatli o'zgartirildi");
       } else {
         console.log(
           "CREATE Manager -> POST /api/staff/create-manager",
           formData
         );
         await Manager.createManager(formData);
-        toast.success("Manager muvaffaqiyatli qo‘shildi");
+        toast.success("Manager muvaffaqiyatli qo'shildi");
       }
       await fetchTeachers();
       setModalOpen(false);
+      setErrorMessage(""); 
     } catch (err) {
       console.error(err);
       const msg =
         err?.response?.data?.message || err?.response?.data || err?.message;
-      toast.error(msg || "Tahrirlashda xatolik yuz berdi");
-    }
-  };
+    
+      if (err.response?.status === 403) {
+        setErrorMessage(msg || "Faqat admin manager qo'shishi mumkin!");
+      } else {
+        setErrorMessage(msg || "Tahrirlashda xatolik yuz berdi");
+      }
+      
 
-  const handleDelete = async () => {
-    try {
-      const id = selectedTeacher._id || selectedTeacher.id;
-      console.log(
-        "DELETE Manager -> DELETE /api/staff/deleted-staff or /deleted-admin",
-        id
-      );
-      await Manager.deleteManager(id);
-      await fetchTeachers();
-      setModalOpen(false);
-      toast.success("O‘qituvchi o‘chirildi");
-    } catch (err) {
-      console.error(err);
-      const msg =
-        err?.response?.data?.message || err?.response?.data || err?.message;
-      toast.error(msg || "O‘chirishda xatolik");
+      toast.error(msg || "Tahrirlashda xatolik yuz berdi");
     }
   };
 
@@ -165,15 +159,6 @@ const Manegerlar = () => {
       render: (row) => (
         <div className="flex gap-2">
           <Button onClick={() => openEditModal(row)}> Tahrirlash</Button>
-          <Button
-            onClick={() => {
-              setSelectedTeacher(row);
-              setModalOpen(true);
-            }}
-            className="bg-red-500 text-white"
-          >
-             O‘chirish
-          </Button>
         </div>
       ),
     },
@@ -181,7 +166,7 @@ const Manegerlar = () => {
 
   return (
     <div className="p-4">
-      <h1 className="text-xl font-bold mb-4">Manegerlar ro‘yxati</h1>
+      <h1 className="text-xl font-bold mb-4">Manegerlar ro'yxati</h1>
 
       <div className="mb-4 flex items-center gap-3">
         <div className="ml-auto flex items-center gap-2">
@@ -208,14 +193,36 @@ const Manegerlar = () => {
           >
             <option value="">All</option>
             <option value="faol">Faol</option>
-            <option value="Nofaol">Nofaol</option>
+            <option value="nofaol">Nofaol</option>
           </select>
         </div>
       </div>
-
       {loading ? (
-        <div className="flex items-center w-full">
-          <p>Yuklanmoqda...</p>
+        <div className="border rounded-lg shadow-sm p-4 animate-pulse">
+          <div className="flex gap-4 mb-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div 
+                key={i} 
+                className={`h-8 bg-gray-200 rounded ${
+                  i < 5 ? 'flex-1' : 'w-40'
+                }`}
+              />
+            ))}
+          </div>
+          
+          {Array.from({ length: 5 }).map((_, rowIndex) => (
+            <div key={rowIndex} className="flex items-center gap-4 mb-4">
+              {Array.from({ length: 6 }).map((_, colIndex) => (
+                <div
+                  key={colIndex}
+                  className={`h-10 bg-gray-100 rounded ${
+                    colIndex < 4 ? 'flex-1' : 
+                    colIndex === 4 ? 'w-24' : 'w-40' 
+                  }`}
+                />
+              ))}
+            </div>
+          ))}
         </div>
       ) : (
         <Table columns={columns} data={teachers} />
@@ -223,12 +230,21 @@ const Manegerlar = () => {
 
       <Modal
         isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => {
+          setModalOpen(false);
+          setErrorMessage(""); 
+        }}
         title={
-          selectedTeacher ? "Tahrirlash/O‘chirish" : "Yangi Meneger qo'shish"
+          selectedTeacher ? "Tahrirlash/O'chirish" : "Yangi Meneger qo'shish"
         }
       >
         <div className="space-y-3">
+          {errorMessage && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              {errorMessage}
+            </div>
+          )}
+          
           <input
             type="text"
             name="first_name"
@@ -267,19 +283,17 @@ const Manegerlar = () => {
               name="active"
               checked={formData.active}
               onChange={handleFormChange}
-            />{" "}
+            />
             Faol
           </label>
           <div className="flex justify-end gap-2">
-            <Button onClick={() => setModalOpen(false)}>Bekor qilish</Button>
+            <Button onClick={() => {
+              setModalOpen(false);
+              setErrorMessage("");
+            }}>Bekor qilish</Button>
             <Button onClick={handleSaveEdit} className="bg-blue-500 text-white">
               Saqlash
             </Button>
-            {selectedTeacher && (
-              <Button onClick={handleDelete} className="bg-red-500 text-white">
-                O‘chirish
-              </Button>
-            )}
           </div>
         </div>
       </Modal>
