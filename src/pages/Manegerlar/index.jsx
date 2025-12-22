@@ -164,7 +164,7 @@ const Manegerlar = () => {
       title: "Amallar",
       render: (row) => (
         <div className="flex gap-2">
-          <Button onClick={() => openEditModal(row)}>✏️ Tahrirlash</Button>
+          <Button onClick={() => openEditModal(row)}> Tahrirlash</Button>
           <Button
             onClick={() => {
               setSelectedTeacher(row);
@@ -172,7 +172,7 @@ const Manegerlar = () => {
             }}
             className="bg-red-500 text-white"
           >
-            🗑️ O‘chirish
+             O‘chirish
           </Button>
         </div>
       ),
@@ -192,9 +192,6 @@ const Manegerlar = () => {
               placeholder="Qidirish..."
               className="px-3 py-2 border rounded w-64"
             />
-            <button className="absolute right-1 top-1/2 -translate-y-1/2 bg-black text-white rounded px-2 py-1">
-              🔍
-            </button>
           </div>
 
           <button

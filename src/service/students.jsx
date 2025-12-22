@@ -22,31 +22,8 @@ const Students = {
     return data;
   },
 
-  async addStudentToGroup(studentId, groupData) {
-    const { data } = await api.post(
-      `/api/student/added-new-group-student/${studentId}`,
-      groupData
-    );
-    return data;
-  },
 
-  async returnStudent(studentId) {
-    const { data } = await api.post(`/api/student/return-student/${studentId}`);
-    return data;
-  },
-
-  async leaveStudent(studentId) {
-    const { data } = await api.post(`/api/student/leave-student/${studentId}`);
-    return data;
-  },
-
-  async returnLeaveStudent(studentId) {
-    const { data } = await api.post(
-      `/api/student/return-leave-student/${studentId}`
-    );
-    return data;
-  },
-
+ 
   async deleteStudent(studentId) {
     const { data } = await api.delete(
       `/api/student/delete-student/${studentId}`
@@ -55,7 +32,6 @@ const Students = {
   },
 
   async editStudent(id, payload) {
-    // backend uses edited-student endpoint
     const { data } = await api.put("/api/student/edited-student", {
       id,
       ...payload,

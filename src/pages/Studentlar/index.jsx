@@ -10,15 +10,13 @@ import { toast } from "react-toastify";
 const Studentlar = () => {
   const [students, setStudents] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [selected, setSelected] = useState(null);
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
-    email: "",
     phone: "",
+    groups: [],
   });
 
-  // Filters
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [status, setStatus] = useState("");
@@ -48,99 +46,103 @@ const Studentlar = () => {
   };
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        dispatch(setLoading(true));
-        const res = await Students.getStudents({
-          search: debouncedSearch,
-          status,
-        });
-        setStudents(res?.data || []);
-      } catch (err) {
-        console.error(err);
-        toast.error("Talabalarni yuklashda xatolik");
-      } finally {
-        dispatch(setLoading(false));
-      }
-    };
-    load();
-  }, [debouncedSearch, status, dispatch]);
+    fetchData();
+  }, [debouncedSearch, status]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const openModal = (student) => {
-    setSelected(student);
-    setForm({ ...student });
-    setModalOpen(true);
-  };
+
 
   const handleSave = async () => {
     try {
-      if (selected) {
-        const id = selected._id || selected.id;
-        console.log("EDIT Student -> PUT /api/student/edited-student", {
-          id,
-          ...form,
-        });
-        await Students.editStudent(id, form);
-        toast.success("Muvaffaqiyatli o‘zgartirildi");
-      } else {
-        console.log("CREATE Student -> POST /api/student/create-student", form);
-        await Students.createStudent(form);
-        toast.success("Student muvaffaqiyatli qo‘shildi");
+      if (!form.first_name || !form.last_name || !form.phone) {
+        toast.error("Iltimos, barcha majburiy maydonlarni to'ldiring!");
+        return;
       }
+
+      const payload = {
+        first_name: form.first_name,
+        last_name: form.last_name,
+        phone: form.phone,
+        groups: form.groups,
+      };
+
+      await Students.createStudent(payload);
+      toast.success("Student muvaffaqiyatli qo‘shildi");
       await fetchData();
       setModalOpen(false);
+      setForm({ first_name: "", last_name: "", phone: "", groups: [] });
     } catch (err) {
       console.error(err);
-      const msg =
-        err?.response?.data?.message || err?.response?.data || err?.message;
-      toast.error(msg || "Saqlashda xatolik");
+      let msg = "Student qo‘shishda xatolik";
+
+      if (err?.response?.data) {
+        const data = err.response.data;
+        if (typeof data === "string") msg = data;
+        else if (data.message) msg = data.message;
+        else msg = JSON.stringify(data);
+      } else if (err?.message) msg = err.message;
+
+      toast.error(msg);
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (student) => {
     try {
-      const id = selected._id || selected.id;
-      console.log(
-        "DELETE Student -> DELETE /api/student/delete-student/:id",
-        id
-      );
+      const id = student._id; 
+      if (!id) {
+        toast.error("Student ID topilmadi!");
+        return;
+      }
+
       await Students.deleteStudent(id);
+      toast.success("Student o‘chirildi");
       await fetchData();
-      setModalOpen(false);
-      toast.success("O‘chirildi");
     } catch (err) {
       console.error(err);
-      const msg =
-        err?.response?.data?.message || err?.response?.data || err?.message;
-      toast.error(msg || "O‘chirishda xatolik");
+      let msg = "Studentni o‘chirishda xatolik";
+      if (err?.response?.data) {
+        const data = err.response.data;
+        if (typeof data === "string") msg = data;
+        else if (data.message) msg = data.message;
+        else msg = JSON.stringify(data);
+      } else if (err?.message) msg = err.message;
+      toast.error(msg);
     }
+  };
+
+  const openModal = () => {
+    setForm({ first_name: "", last_name: "", phone: "", groups: [] });
+    setModalOpen(true);
   };
 
   const columns = [
     { title: "ID", dataIndex: "id" },
     { title: "Ism", dataIndex: "first_name" },
     { title: "Familiya", dataIndex: "last_name" },
-    { title: "Email", dataIndex: "email" },
     { title: "Telefon", dataIndex: "phone" },
     { title: "Holati", dataIndex: "status" },
     {
       title: "Amallar",
       render: (row) => (
         <div className="flex gap-2">
-          <Button onClick={() => openModal(row)}>✏️ Tahrirlash</Button>
           <Button
             onClick={() => {
-              setSelected(row);
+              setForm({ ...row });
               setModalOpen(true);
             }}
+            className="bg-blue-500 text-white"
+          >
+             Ko‘rish
+          </Button>
+          <Button
+            onClick={() => handleDelete(row)}
             className="bg-red-500 text-white"
           >
-            🗑️ O‘chirish
+             O‘chirish
           </Button>
         </div>
       ),
@@ -153,26 +155,14 @@ const Studentlar = () => {
 
       <div className="mb-4 flex items-center gap-3">
         <div className="ml-auto flex items-center gap-2">
-          <div className="relative">
-            <input
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-              }}
-              placeholder="Qidirish..."
-              className="px-3 py-2 border rounded w-64"
-            />
-            <button className="absolute right-1 top-1/2 -translate-y-1/2 bg-black text-white rounded px-2 py-1">
-              🔍
-            </button>
-          </div>
-
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Qidirish..."
+            className="px-3 py-2 border rounded w-64"
+          />
           <button
-            onClick={() => {
-              setSelected(null);
-              setForm({ first_name: "", last_name: "", email: "", phone: "" });
-              setModalOpen(true);
-            }}
+            onClick={openModal}
             className="bg-black text-white px-3 py-2 rounded"
           >
             + Student Qo'shish
@@ -185,7 +175,7 @@ const Studentlar = () => {
           >
             <option value="">All</option>
             <option value="faol">Faol</option>
-            <option value="nofaol">Nofaol</option>
+            <option value="yakunladi">Yakunladi</option>
           </select>
         </div>
       </div>
@@ -201,7 +191,7 @@ const Studentlar = () => {
       <Modal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={selected ? "Tahrirlash/O‘chirish" : "Yangi student qo'shish"}
+        title="Yangi student qo'shish"
       >
         <div className="space-y-3">
           <input
@@ -219,17 +209,22 @@ const Studentlar = () => {
             className="w-full px-3 py-2 border rounded"
           />
           <input
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            placeholder="Email"
-            className="w-full px-3 py-2 border rounded"
-          />
-          <input
             name="phone"
             value={form.phone}
             onChange={handleChange}
-            placeholder="Telefon"
+            placeholder="Telefon (min 12 raqam)"
+            className="w-full px-3 py-2 border rounded"
+          />
+          <input
+            name="group"
+            value={form.groups[0]?.group || ""}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                groups: e.target.value ? [{ group: e.target.value }] : [],
+              })
+            }
+            placeholder="Guruh ID "
             className="w-full px-3 py-2 border rounded"
           />
           <div className="flex justify-end gap-2">
@@ -237,11 +232,6 @@ const Studentlar = () => {
             <Button onClick={handleSave} className="bg-blue-500 text-white">
               Saqlash
             </Button>
-            {selected && (
-              <Button onClick={handleDelete} className="bg-red-500 text-white">
-                O‘chirish
-              </Button>
-            )}
           </div>
         </div>
       </Modal>

@@ -8,10 +8,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { setLoading } from "../../slice/loading";
 import { toast } from "react-toastify";
 
-const Manegerlar = () => {
+const Ustozlar = () => {
   const [teachers, setTeachers] = useState([]);
+  const [courses, setCourses] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
+
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -20,10 +22,9 @@ const Manegerlar = () => {
     password: "",
     course_id: "",
     role: "",
+    field: "",
     active: true,
   });
-
-  const [courses, setCourses] = useState([]);
 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -46,36 +47,24 @@ const Manegerlar = () => {
       });
       setTeachers(res?.data || []);
     } catch (err) {
-      console.error("ERR:", err.response?.status);
+      console.error(err);
+      toast.error("O‘qituvchilarni yuklashda xatolik");
     } finally {
       dispatch(setLoading(false));
     }
   };
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        dispatch(setLoading(true));
-        const res = await Teachers.getTeachers({
-          search: debouncedSearch,
-          status,
-        });
-        setTeachers(res?.data || []);
-      } catch (err) {
-        console.error("ERR:", err.response?.status);
-      } finally {
-        dispatch(setLoading(false));
-      }
-    };
-    load();
-  }, [dispatch, debouncedSearch, status]);
+    fetchTeachers();
+  }, [debouncedSearch, status]);
 
   const fetchCourses = async () => {
     try {
       const res = await Courses.getcourses({ limit: 100 });
       setCourses(res?.data || []);
     } catch (err) {
-      console.error("ERR fetching courses:", err);
+      console.error(err);
+      toast.error("Kurslarni yuklashda xatolik");
     }
   };
 
@@ -89,7 +78,11 @@ const Manegerlar = () => {
       first_name: "",
       last_name: "",
       email: "",
+      phone: "",
+      password: "",
+      course_id: "",
       role: "",
+      field: "",
       active: true,
     });
     setModalOpen(true);
@@ -97,7 +90,7 @@ const Manegerlar = () => {
 
   const openEditModal = (teacher) => {
     setSelectedTeacher(teacher);
-    setFormData({ ...teacher });
+    setFormData({ ...teacher, password: "" });
     setModalOpen(true);
   };
 
@@ -112,7 +105,6 @@ const Manegerlar = () => {
   const handleSave = async () => {
     try {
       if (!selectedTeacher) {
-        // creation requires phone, password, course_id
         if (!formData.phone || !formData.password || !formData.course_id) {
           toast.error("Telefon, parol va kursni tanlash talab qilinadi");
           return;
@@ -121,43 +113,46 @@ const Manegerlar = () => {
 
       if (selectedTeacher) {
         const id = selectedTeacher._id || selectedTeacher.id;
-        console.log("EDIT Teacher -> PUT /api/teacher/edited-teacher", {
-          id,
-          ...formData,
-        });
         await Teachers.editTeacher(id, formData);
         toast.success("O‘qituvchi muvaffaqiyatli o‘zgartirildi");
       } else {
-        console.log(
-          "CREATE Teacher -> POST /api/teacher/create-teacher",
-          formData
-        );
         await Teachers.createTeacher(formData);
         toast.success("O‘qituvchi muvaffaqiyatli qo‘shildi");
       }
+
       await fetchTeachers();
       setModalOpen(false);
     } catch (err) {
       console.error(err);
-      const msg =
-        err?.response?.data?.message || err?.response?.data || err?.message;
-      toast.error(msg || "Saqlashda xatolik");
+      let msg = "Saqlashda xatolik";
+      if (err?.response?.data) {
+        const data = err.response.data;
+        if (typeof data === "string") msg = data;
+        else if (data.message) msg = data.message;
+        else msg = JSON.stringify(data);
+      } else if (err?.message) msg = err.message;
+      toast.error(msg);
     }
   };
 
   const handleDelete = async () => {
     try {
+      if (!selectedTeacher) return;
       const id = selectedTeacher._id || selectedTeacher.id;
-      console.log("DELETE Teacher -> DELETE /api/teacher/deleted-teacher", id);
       await Teachers.deleteTeacher(id);
+      toast.success("O‘qituvchi o‘chirildi");
       await fetchTeachers();
       setModalOpen(false);
-      toast.success("O‘qituvchi o‘chirildi");
     } catch (err) {
       console.error(err);
-      const msg =
-        err?.response?.data?.message || err?.response?.data || err?.message;
-      toast.error(msg || "O‘chirishda xatolik");
+      let msg = "O‘chirishda xatolik";
+      if (err?.response?.data) {
+        const data = err.response.data;
+        if (typeof data === "string") msg = data;
+        else if (data.message) msg = data.message;
+        else msg = JSON.stringify(data);
+      } else if (err?.message) msg = err.message;
+      toast.error(msg);
     }
   };
 
@@ -165,65 +160,50 @@ const Manegerlar = () => {
     { title: "Ism", dataIndex: "first_name" },
     { title: "Familiya", dataIndex: "last_name" },
     { title: "Email", dataIndex: "email" },
+    { title: "Telefon", dataIndex: "phone" },
     {
       title: "Holati",
       render: (row) => (
         <span
           className={`px-2 py-1 rounded text-xs font-medium ${
-            row.active
-              ? "bg-green-100 text-green-700"
-              : "bg-red-100 text-red-700"
+            row.active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
           }`}
         >
-          {row.status}
+          {row.status || (row.active ? "faol" : "nofaol")}
         </span>
-      ),
-    },
-    {
-      title: "Role",
-      render: (row) => (
-        <span className="uppercase text-xs font-semibold">{row.role}</span>
       ),
     },
     {
       title: "Amallar",
       render: (row) => (
         <div className="flex gap-2">
-          <button
-            onClick={() => openEditModal(row)}
-            className="text-blue-600 hover:underline"
+          <Button
+            onClick={() => {
+              setSelectedTeacher(row);
+              handleDelete();
+            }}
+            className="bg-red-500 text-white"
           >
-            Ko‘rish
-          </button>
-          <button
-            onClick={() => handleDelete(row._id || row.id)}
-            className="text-red-600 hover:underline"
-          >
-            O‘chirish
-          </button>
+            🗑️ O‘chirish
+          </Button>
         </div>
       ),
     },
   ];
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl font-bold mb-4">O‘qituvchilar ro‘yxati</h1>
+    <div className="p-4 md:p-6">
+      <h1 className="text-2xl font-bold mb-4">O‘qituvchilar ro'yxati</h1>
 
       <div className="mb-4 flex items-center gap-3">
         <div className="ml-auto flex items-center gap-2">
           <div className="relative">
             <input
               value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-              }}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Qidirish..."
               className="px-3 py-2 border rounded w-64"
             />
-            <button className="absolute right-1 top-1/2 -translate-y-1/2 bg-black text-white rounded px-2 py-1">
-              🔍
-            </button>
           </div>
 
           <button
@@ -240,13 +220,13 @@ const Manegerlar = () => {
           >
             <option value="">All</option>
             <option value="faol">Faol</option>
-            <option value="nofaol">Nofaol</option>
+            <option value="ishdan bo'shatilgan">ishdan bo'shatilgan</option>
           </select>
         </div>
       </div>
 
       {loading ? (
-        <div className="flex items-center w-100%">
+        <div className="flex items-center w-full">
           <p>Yuklanmoqda...</p>
         </div>
       ) : (
@@ -256,13 +236,10 @@ const Manegerlar = () => {
       <Modal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={
-          selectedTeacher ? "Tahrirlash/O‘chirish" : "Yangi o‘qituvchi qo‘shish"
-        }
+        title={selectedTeacher ? "Tahrirlash/O‘chirish" : "Yangi o‘qituvchi qo‘shish"}
       >
         <div className="space-y-3">
           <input
-            type="text"
             name="first_name"
             value={formData.first_name}
             onChange={handleFormChange}
@@ -270,7 +247,6 @@ const Manegerlar = () => {
             className="w-full px-3 py-2 border rounded"
           />
           <input
-            type="text"
             name="last_name"
             value={formData.last_name}
             onChange={handleFormChange}
@@ -278,7 +254,6 @@ const Manegerlar = () => {
             className="w-full px-3 py-2 border rounded"
           />
           <input
-            type="email"
             name="email"
             value={formData.email}
             onChange={handleFormChange}
@@ -286,32 +261,36 @@ const Manegerlar = () => {
             className="w-full px-3 py-2 border rounded"
           />
           <input
-            type="text"
             name="role"
             value={formData.role}
             onChange={handleFormChange}
             placeholder="Role"
             className="w-full px-3 py-2 border rounded"
           />
-
           <input
-            type="text"
+            name="field"
+            value={formData.field}
+            onChange={handleFormChange}
+            placeholder="Field"
+            className="w-full px-3 py-2 border rounded"
+          />
+          <input
             name="phone"
             value={formData.phone}
             onChange={handleFormChange}
             placeholder="Telefon raqam"
             className="w-full px-3 py-2 border rounded"
           />
-
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleFormChange}
-            placeholder="Parol"
-            className="w-full px-3 py-2 border rounded"
-          />
-
+          {!selectedTeacher && (
+            <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleFormChange}
+              placeholder="Parol"
+              className="w-full px-3 py-2 border rounded"
+            />
+          )}
           <select
             name="course_id"
             value={formData.course_id}
@@ -325,15 +304,17 @@ const Manegerlar = () => {
               </option>
             ))}
           </select>
+
           <label className="flex items-center gap-2">
             <input
               type="checkbox"
               name="active"
               checked={formData.active}
               onChange={handleFormChange}
-            />{" "}
+            />
             Faol
           </label>
+
           <div className="flex justify-end gap-2">
             <Button onClick={() => setModalOpen(false)}>Bekor qilish</Button>
             <Button onClick={handleSave} className="bg-blue-500 text-white">
@@ -351,4 +332,4 @@ const Manegerlar = () => {
   );
 };
 
-export default Manegerlar;
+export default Ustozlar;

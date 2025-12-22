@@ -1,9 +1,16 @@
-import React from 'react'
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Chiqish = () => {
-  return (
-    <div>Chiqish</div>
-  )
-}
+  const navigate = useNavigate();
 
-export default Chiqish
+  useEffect(() => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/login", { replace: true });
+  }, [navigate]);
+
+  return <div>Chiqish qilindi...</div>;
+};
+
+export default Chiqish;
