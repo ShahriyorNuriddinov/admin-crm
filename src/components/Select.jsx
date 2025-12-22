@@ -24,14 +24,12 @@ const Select = ({
 
       return () => clearTimeout(delay);
     }
-  }, [search]);
+  }, [search, asyncSearch, onSearch]);
 
   return (
     <div className="flex flex-col gap-1 w-full">
       {label && (
-        <label className="text-sm font-medium text-gray-700">
-          {label}
-        </label>
+        <label className="text-sm font-medium text-gray-700">{label}</label>
       )}
 
       {asyncSearch && (
@@ -57,10 +55,7 @@ const Select = ({
         {!multiple && <option value="">{placeholder}</option>}
 
         {data.map((opt) => (
-          <option
-            key={opt.value ?? opt.id}
-            value={opt.value ?? opt.id}
-          >
+          <option key={opt.value ?? opt.id} value={opt.value ?? opt.id}>
             {opt.label ?? opt.name}
           </option>
         ))}

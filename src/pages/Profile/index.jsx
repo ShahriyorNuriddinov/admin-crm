@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import AuthSrevice from "../../service/auth";
+import AuthService from "../../service/auth";
 import { toast } from "react-toastify";
 
 const Profile = () => {
@@ -22,7 +22,7 @@ const Profile = () => {
     const load = async () => {
       try {
         setLoading(true);
-        const res = await AuthSrevice.getProfile();
+        const res = await AuthService.getProfile();
         // API may return data under different keys; try to use common shapes
         const data =
           res?.data || res?.data?.data || res?.data?.user || res || {};
@@ -44,7 +44,7 @@ const Profile = () => {
   const handleSaveProfile = async () => {
     try {
       setLoading(true);
-      await AuthSrevice.editProfile(profile);
+      await AuthService.editProfile(profile);
       toast.success("Profil yangilandi");
     } catch (err) {
       console.error(err);
@@ -64,7 +64,7 @@ const Profile = () => {
       const formData = new FormData();
       formData.append("image", avatarFile);
       setLoading(true);
-      await AuthSrevice.editProfileImg(formData);
+      await AuthService.editProfileImg(formData);
       toast.success("Rasim yuklandi");
     } catch (err) {
       console.error(err);
@@ -85,7 +85,7 @@ const Profile = () => {
     }
     try {
       setLoading(true);
-      await AuthSrevice.editPassword({
+      await AuthService.editPassword({
         current_password: passwords.current_password,
         new_password: passwords.new_password,
       });
@@ -134,6 +134,7 @@ const Profile = () => {
           <div className="flex gap-2 justify-end">
             <button
               onClick={handleSaveProfile}
+              disabled={loading}
               className="bg-blue-500 text-white px-3 py-2 rounded"
             >
               Saqlash
@@ -147,6 +148,7 @@ const Profile = () => {
           <div className="flex gap-2 justify-end">
             <button
               onClick={handleUploadAvatar}
+              disabled={loading}
               className="bg-blue-500 text-white px-3 py-2 rounded"
             >
               Yuklash
@@ -183,6 +185,7 @@ const Profile = () => {
           <div className="flex gap-2 justify-end">
             <button
               onClick={handleSavePassword}
+              disabled={loading}
               className="bg-blue-500 text-white px-3 py-2 rounded"
             >
               Parolni yangilash

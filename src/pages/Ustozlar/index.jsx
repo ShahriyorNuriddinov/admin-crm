@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import Teachers from "../../service/teachers";
+import Courses from "../../service/courses";
 import Table from "../../components/Table";
+import Modal from "../../components/Modal";
+import Button from "../../components/Button";
 import { useDispatch, useSelector } from "react-redux";
 import { setLoading } from "../../slice/loading";
 import { toast } from "react-toastify";
@@ -13,9 +16,14 @@ const Manegerlar = () => {
     first_name: "",
     last_name: "",
     email: "",
+    phone: "",
+    password: "",
+    course_id: "",
     role: "",
     active: true,
   });
+
+  const [courses, setCourses] = useState([]);
 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -45,8 +53,35 @@ const Manegerlar = () => {
   };
 
   useEffect(() => {
-    fetchTeachers();
+    const load = async () => {
+      try {
+        dispatch(setLoading(true));
+        const res = await Teachers.getTeachers({
+          search: debouncedSearch,
+          status,
+        });
+        setTeachers(res?.data || []);
+      } catch (err) {
+        console.error("ERR:", err.response?.status);
+      } finally {
+        dispatch(setLoading(false));
+      }
+    };
+    load();
   }, [dispatch, debouncedSearch, status]);
+
+  const fetchCourses = async () => {
+    try {
+      const res = await Courses.getcourses({ limit: 100 });
+      setCourses(res?.data || []);
+    } catch (err) {
+      console.error("ERR fetching courses:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchCourses();
+  }, []);
 
   const openCreateModal = () => {
     setSelectedTeacher(null);
@@ -76,6 +111,14 @@ const Manegerlar = () => {
 
   const handleSave = async () => {
     try {
+      if (!selectedTeacher) {
+        // creation requires phone, password, course_id
+        if (!formData.phone || !formData.password || !formData.course_id) {
+          toast.error("Telefon, parol va kursni tanlash talab qilinadi");
+          return;
+        }
+      }
+
       if (selectedTeacher) {
         const id = selectedTeacher._id || selectedTeacher.id;
         console.log("EDIT Teacher -> PUT /api/teacher/edited-teacher", {
@@ -146,8 +189,18 @@ const Manegerlar = () => {
       title: "Amallar",
       render: (row) => (
         <div className="flex gap-2">
-          <button className="text-blue-600 hover:underline">Ko‘rish</button>
-          <button className="text-red-600 hover:underline">O‘chirish</button>
+          <button
+            onClick={() => openEditModal(row)}
+            className="text-blue-600 hover:underline"
+          >
+            Ko‘rish
+          </button>
+          <button
+            onClick={() => handleDelete(row._id || row.id)}
+            className="text-red-600 hover:underline"
+          >
+            O‘chirish
+          </button>
         </div>
       ),
     },
@@ -240,6 +293,38 @@ const Manegerlar = () => {
             placeholder="Role"
             className="w-full px-3 py-2 border rounded"
           />
+
+          <input
+            type="text"
+            name="phone"
+            value={formData.phone}
+            onChange={handleFormChange}
+            placeholder="Telefon raqam"
+            className="w-full px-3 py-2 border rounded"
+          />
+
+          <input
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleFormChange}
+            placeholder="Parol"
+            className="w-full px-3 py-2 border rounded"
+          />
+
+          <select
+            name="course_id"
+            value={formData.course_id}
+            onChange={handleFormChange}
+            className="w-full px-3 py-2 border rounded"
+          >
+            <option value="">-- Kursni tanlang --</option>
+            {courses.map((c) => (
+              <option key={c._id || c.id} value={c._id || c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
           <label className="flex items-center gap-2">
             <input
               type="checkbox"

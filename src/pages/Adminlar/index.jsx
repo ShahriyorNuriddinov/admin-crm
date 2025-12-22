@@ -12,12 +12,17 @@ const Adminlar = () => {
   const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [formData, setFormData] = useState({
     first_name: "",
+    last_name: "",
     email: "",
+    password: "",
+    role: "admin",
+    work_date: new Date().toISOString(),
     status: "faol",
   });
 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [status, setStatus] = useState("");
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -25,8 +30,23 @@ const Adminlar = () => {
   }, [search]);
 
   useEffect(() => {
-    fetchAdmins();
-  }, [debouncedSearch]);
+    const load = async () => {
+      try {
+        setLoading(true);
+        const data = await AdminService.getAllAdmins({
+          search: debouncedSearch,
+          status,
+        });
+        setAdmins(data || []);
+      } catch (err) {
+        console.error(err);
+        toast.error("Ma'lumotni olishda xatolik");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [debouncedSearch, status]);
 
   const fetchAdmins = async () => {
     try {
@@ -59,16 +79,28 @@ const Adminlar = () => {
   const openEditModal = (admin) => {
     setSelectedAdmin(admin);
     setFormData({
-      first_name: admin.first_name,
-      email: admin.email,
-      status: admin.status,
+      first_name: admin.first_name || "",
+      last_name: admin.last_name || "",
+      email: admin.email || "",
+      password: "",
+      role: admin.role || "admin",
+      work_date: admin.work_date || new Date().toISOString(),
+      status: admin.status || "faol",
     });
     setModalOpen(true);
   };
 
   const openCreateModal = () => {
     setSelectedAdmin(null);
-    setFormData({ first_name: "", email: "", status: "faol" });
+    setFormData({
+      first_name: "",
+      last_name: "",
+      email: "",
+      password: "",
+      role: "admin",
+      work_date: new Date().toISOString(),
+      status: "faol",
+    });
     setModalOpen(true);
   };
 
@@ -76,6 +108,7 @@ const Adminlar = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
   const handleSaveEdit = async () => {
     try {
       if (selectedAdmin) {
@@ -84,8 +117,16 @@ const Adminlar = () => {
           id,
           ...formData,
         });
-        await AdminService.editAdmin(id, formData);
-        toast.success("Muvaffaqiyatli o‘zgartirildi");
+        try {
+          await AdminService.editAdmin(id, formData);
+          toast.success("Muvaffaqiyatli o‘zgartirildi");
+        } catch (e) {
+          if (e?.response?.status === 404) {
+            toast.error(
+              "Serverda adminni tahrirlash endpointi mavjud emas. Iltimos, backendni tekshiring."
+            );
+          } else throw e;
+        }
       } else {
         console.log("CREATE Admin -> POST /api/staff/create-admin", formData);
         await AdminService.createAdmin(formData);
@@ -175,6 +216,14 @@ const Adminlar = () => {
             className="w-full px-3 py-2 border rounded"
           />
           <input
+            type="text"
+            name="last_name"
+            value={formData.last_name}
+            onChange={handleFormChange}
+            placeholder="Familiya"
+            className="w-full px-3 py-2 border rounded"
+          />
+          <input
             type="email"
             name="email"
             value={formData.email}
@@ -182,6 +231,34 @@ const Adminlar = () => {
             placeholder="Email"
             className="w-full px-3 py-2 border rounded"
           />
+          <input
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleFormChange}
+            placeholder="Parol"
+            className="w-full px-3 py-2 border rounded"
+          />
+          <select
+            name="role"
+            value={formData.role}
+            onChange={handleFormChange}
+            className="w-full px-3 py-2 border rounded"
+          >
+            <option value="admin">Admin</option>
+            <option value="manager">Maneger</option>
+          </select>
+
+          <input
+            type="date"
+            name="work_date"
+            value={new Date(formData.work_date).toISOString().split("T")[0]}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, work_date: e.target.value }))
+            }
+            className="w-full px-3 py-2 border rounded"
+          />
+
           <select
             name="status"
             value={formData.status}

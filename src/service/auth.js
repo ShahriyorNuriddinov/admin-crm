@@ -1,7 +1,7 @@
 import axios from "./api";
 
-const AuthSrevice = {
-  async userloggin({ email, password }) {
+const AuthService = {
+  async userLogin({ email, password }) {
     const response = await axios.post("/api/auth/sign-in", {
       email,
       password,
@@ -34,4 +34,4 @@ const AuthSrevice = {
   },
 };
 
-export default AuthSrevice;
+export default AuthService;

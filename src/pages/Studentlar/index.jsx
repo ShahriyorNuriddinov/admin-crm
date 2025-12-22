@@ -26,7 +26,6 @@ const Studentlar = () => {
   const loading = useSelector((state) => state.loading);
   const dispatch = useDispatch();
 
-  // Debounce search
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(t);
@@ -49,8 +48,23 @@ const Studentlar = () => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, [debouncedSearch, status]);
+    const load = async () => {
+      try {
+        dispatch(setLoading(true));
+        const res = await Students.getStudents({
+          search: debouncedSearch,
+          status,
+        });
+        setStudents(res?.data || []);
+      } catch (err) {
+        console.error(err);
+        toast.error("Talabalarni yuklashda xatolik");
+      } finally {
+        dispatch(setLoading(false));
+      }
+    };
+    load();
+  }, [debouncedSearch, status, dispatch]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -176,7 +190,13 @@ const Studentlar = () => {
         </div>
       </div>
 
-      <Table columns={columns} data={students} />
+      {loading ? (
+        <div className="flex items-center w-full">
+          <p>Yuklanmoqda...</p>
+        </div>
+      ) : (
+        <Table columns={columns} data={students} />
+      )}
 
       <Modal
         isOpen={modalOpen}

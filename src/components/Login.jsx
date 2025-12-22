@@ -7,7 +7,7 @@ import {
   LogginUserSuccess,
 } from "../slice/auth";
 import { ThreeDot } from "react-loading-indicators";
-import AuthSrevice from "./../service/auth";
+import AuthService from "./../service/auth";
 import { useNavigate } from "react-router-dom";
 
 const Login = () => {
@@ -28,7 +28,7 @@ const Login = () => {
     e.preventDefault();
     dispatch(LogginUserStart());
     try {
-      const response = await AuthSrevice.userloggin({ email, password });
+      const response = await AuthService.userLogin({ email, password });
       dispatch(LogginUserSuccess(response));
       navigate("/");
     } catch (err) {

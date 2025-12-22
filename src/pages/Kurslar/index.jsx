@@ -49,7 +49,24 @@ const Kusrlar = () => {
   };
 
   useEffect(() => {
-    fetchCourses();
+    const load = async () => {
+      try {
+        dispatch(setLoading(true));
+        const is_freeze_param = isFreeze === "" ? null : isFreeze === "true";
+        const res = await CoursesService.getcourses({
+          search: debouncedSearch,
+          status,
+          is_freeze: is_freeze_param,
+        });
+        setCourses(res.data || []);
+      } catch (err) {
+        console.error("ERR:", err.response?.status);
+      } finally {
+        dispatch(setLoading(false));
+      }
+    };
+
+    load();
   }, [dispatch, debouncedSearch, status, isFreeze]);
 
   const handleSaveCourse = async () => {

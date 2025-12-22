@@ -21,6 +21,7 @@ const Manegerlar = () => {
 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [status, setStatus] = useState("");
 
   const loading = useSelector((state) => state.loading);
   const dispatch = useDispatch();
@@ -31,8 +32,23 @@ const Manegerlar = () => {
   }, [search]);
 
   useEffect(() => {
-    fetchTeachers();
-  }, [dispatch, debouncedSearch]);
+    const load = async () => {
+      try {
+        dispatch(setLoading(true));
+        const res = await Manager.getmaneger({
+          search: debouncedSearch,
+          status,
+        });
+        setTeachers(res.data || []);
+      } catch (err) {
+        console.error("ERR:", err.response?.status);
+        toast.error("O‘qituvchilarni olishda xatolik");
+      } finally {
+        dispatch(setLoading(false));
+      }
+    };
+    load();
+  }, [dispatch, debouncedSearch, status]);
 
   const fetchTeachers = async () => {
     try {
