@@ -1,0 +1,9 @@
+@import "tailwindcss";
+@layer utilities {
+  .container {
+    max-width: 1900px;
+    margin: 0 auto;
+    width: 80%;
+  }
+}
+
