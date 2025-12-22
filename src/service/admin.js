@@ -1,32 +1,35 @@
-import axios from "./api";
-
-const base_url = "https://admin-crm.onrender.com";
-const token = localStorage.getItem("token");
-
-const config = {
-  headers: { Authorization: `Token ${token}` },
-};
+import api from "./api";
 
 const AdminService = {
-  getAllAdmins: async () => {
-    const res = await axios.get(`${base_url}/api/staff/all-admins`, config);
+  getAllAdmins: async ({
+    search = "",
+    status = "",
+    page = null,
+    limit = null,
+  } = {}) => {
+    const params = {};
+    if (search) params.search = search;
+    if (status) params.status = status;
+    if (page != null) params.page = page;
+    if (limit != null) params.limit = limit;
+
+    const res = await api.get("/api/staff/all-admins", { params });
     return res.data.data;
   },
 
   editAdmin: async (id, data) => {
-    const res = await axios.put(
-      `${base_url}/api/staff/edited-admin`,
-      { id, ...data },
-      config
-    );
+    const res = await api.put("/api/staff/edited-admin", { id, ...data });
+    return res.data;
+  },
+
+  createAdmin: async (payload) => {
+    const res = await api.post("/api/staff/create-admin", payload);
     return res.data;
   },
 
   deleteAdmin: async (id) => {
-    const res = await axios.delete(`${base_url}/api/staff/deleted-staff`, {
-      ...config,
-      data: { id },
-    });
+    // backend expects /api/staff/deleted-admin
+    const res = await api.delete("/api/staff/deleted-admin", { data: { id } });
     return res.data;
   },
 };
